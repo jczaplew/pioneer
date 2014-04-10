@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8"/>
+    <title>Hubby and yummy</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+    <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css">
+
+    <style>
+
+    svg {
+      font: 10px sans-serif;
+    }
+
+    .axis path,
+    .axis line {
+      fill: none;
+      stroke: #eee;
+      stroke-width:1px;
+      shape-rendering: crispEdges;
+    }
+
+    .bar {
+      fill: #7F6385;
+      opacity: 0.7;
+      cursor: pointer;
+    }
+
+    .bar:hover {
+      opacity: 1;
+    }
+
+    .bar.yummy {
+      fill: #79BD9A;
+    }
+
+    .bar.hubby {
+      fill: #0B486B;
+    }
+
+    .x.axis path {
+      display: none;
+    }
+
+    .tick > text {
+      cursor: pointer;
+    }
+    .about > h1 {
+      color: #333;
+    }
+    .about > p {
+      font-family: Georgia,Cambria,"Times New Roman",Times,serif;
+      color: #555;
+    }
+    .graph {
+      text-align: center;
+    }
+    </style>
+    
+  </head>
+
+  <body>
+    <div class="container">
+      <div class="row">
+        <div class="col-sm-12 about">
+          <h1>Quantifying hubby & yummy</h1>
+          <p>If you have ever read the comments of a recipe online, especially on <a href="http://allrecipes.com">allrecipes.com</a>, you may have noticed the prevalence of the words "hubby" and "yummy" in the comments. To me, these words are worse than nails on a chalkboard, and reading these comments often gives the impression that all "hubbies" are "soooo picky". But I digress.<br><br>
+          However, one evening while my quiche was taking longer than expected to firm up, I got curious: could we quantify which recipes were the most "yummy" *cringe* or best for the "hubby" *more cringing*.<br><br>
+          Below you will find the 50 recipes with the most occurrences of "hubby" and "yummy" from <a href="http://thepioneerwoman.com">thepioneerwoman.com</a>.
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-sm-12 graph">
+          <h4>Yummy</h4>
+          <div id="yummy"></div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-sm-12 graph">
+          <h4>Hubby</h4>
+          <div id="hubby"></div>
+        </div>
+      </div>
+    </div>
+
+    <script src="http://d3js.org/d3.v3.min.js"></script>
+
+    <script>
+
+    var width = 800,
+        height = 1200,
+        paddingTop = 15,
+        paddingRight = 20,
+        paddingBottom = 0,
+        paddingLeft = 270,
+        allData = { };
+
+    var x = d3.scale.linear().range([0, width]),
+        xAxis = d3.svg.axis().scale(x).orient('top').tickSize(-height + paddingTop + paddingBottom);
+
+    function buildGraph(data, div) {
+      var y = d3.scale.ordinal()
+              .rangeRoundBands([0, height - paddingTop - paddingBottom], 0.1)
+              .domain(data.map(function(d) {
+                return d.title;
+              }));
+
+      var yAxis = d3.svg.axis().scale(y).orient('left');
+
+      var graph = d3.select("#" + div)
+            .append("svg")
+            .attr('width', width + paddingRight + paddingLeft)
+            .attr('height', height)
+            .append('g')
+            .attr('transform', 'translate(' + paddingLeft + ',' + paddingTop + ')');
+
+      x.domain([0, d3.max(data, function(d) { return d[div] })]);
+
+      graph.append("g")
+        .attr("class", "y axis")
+        .call(yAxis)
+
+      graph.append("g")
+        .attr("class", "x axis")
+        .call(xAxis)
+        .selectAll('.x.axis g')
+        .style('display', function(d, i) {
+            return i % 1 != 0 ? 'none' : 'block'
+        });
+
+      var bars = graph.selectAll('g.bar')
+        .data(data)
+        .enter().append('g')
+        .attr('class', 'bar ' + div)
+        .attr('transform', function(d, i) {
+          return "translate(0 , " + y.domain(d3.range(data.length))(i) + ")"
+        });
+
+      bars.append('rect')
+        .attr('class', 'percent')
+        .attr('width', function(d) {
+          return x(d[div])
+        })
+        .attr('height', function() {
+          return y.rangeBand()
+        })
+        .on("click", function(d) {
+          document.location.href = d.url;
+        });
+
+      d3.select("#" + div)
+        .select("svg")
+        .select("g")
+        .select("g")
+        .selectAll(".tick")
+        .selectAll("text")
+        .attr("class", div)
+        .on("click", function(d) {
+          // Woof. There has to be a better way.
+            allData[div].forEach(function(j) {
+              if (j.title === d) {
+                document.location.href = j.url;
+              }
+            });
+        });
+
+    }
+    
+    d3.csv("yummy.csv", function(error, data) {
+      allData.yummy = data;
+      buildGraph(data, "yummy");
+    });
+
+    d3.csv("hubby.csv", function(error, data) {
+      allData.hubby = data;
+      buildGraph(data, "hubby");
+    });
+  
+
+    </script>
+</body>
+</html>
